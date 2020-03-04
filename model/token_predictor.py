@@ -238,13 +238,18 @@ class SchemaTokenPredictor(TokenPredictor):
         copy_switch = None
         query_scores = None
         query_tokens = None
+        previous_queries_tracker, previous_queries_states_tracker = [], []
         if self.params.use_previous_query and len(previous_queries) > 0:
             if self.params.use_copy_switch:
                 copy_switch = self._get_copy_switch(state_and_attn)
             for turn, (previous_query, previous_query_state) in enumerate(zip(previous_queries, previous_query_states)):
                 assert len(previous_query) == len(previous_query_state)
+                previous_queries_tracker += previous_query
+                previous_queries_states_tracker += previous_query_state
+                previous_query_states_tracker_stacked = torch.stack(previous_queries_states_tracker, dim=1)
                 previous_query_state = torch.stack(previous_query_state, dim=1)
-                query_scores, query_tokens = score_query_tokens(previous_query, previous_query_state, self._get_query_token_scorer(intermediate_state))
+                query_scores, query_tokens = score_query_tokens(previous_queries_tracker, previous_query_states_tracker_stacked, self._get_query_token_scorer(intermediate_state))
+                # query_scores, query_tokens = score_query_tokens(previous_query, previous_query_state, self._get_query_token_scorer(intermediate_state))
                 query_scores = query_scores.squeeze()
 
         final_scores = final_scores.squeeze()

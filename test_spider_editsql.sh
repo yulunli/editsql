@@ -7,7 +7,7 @@
 # 2. train and evaluate.
 #    the result (models, logs, prediction outputs) are saved in $LOGDIR
 
-GLOVE_PATH="/home/lily/rz268/dialog2sql/word_emb/glove.840B.300d.txt" # you need to change this
+GLOVE_PATH="data/glove.840B.300d.txt" # you need to change this
 LOGDIR="logs/logs_spider_editsql"
 
 CUDA_VISIBLE_DEVICES=0 python3 run.py --raw_train_filename="data/spider_data_removefrom/train.pkl" \
@@ -27,6 +27,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --raw_train_filename="data/spider_data_rem
           --interaction_level=1 \
           --reweight_batch=1 \
           --freeze=1 \
+          --no_gpus=0 \
           --logdir=$LOGDIR \
           --evaluate=1 \
           --evaluate_split="valid" \
