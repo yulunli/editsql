@@ -181,6 +181,7 @@ def train_epoch_with_interactions(interaction_batches,
     progbar = get_progressbar("train     ", len(interaction_batches))
     progbar.start()
     loss_sum = 0.
+    skipped_batch_count = 0
 
     for i, interaction_batch in enumerate(interaction_batches):
         assert len(interaction_batch) == 1
@@ -192,6 +193,10 @@ def train_epoch_with_interactions(interaction_batches,
         if 'sparc' in params.data_directory and "baseball_1" in interaction.identifier:
             continue
 
+        if interaction.get_schema().num_col > 50:
+            skipped_batch_count += 1
+            continue
+
         batch_loss = model.train_step(interaction, params.train_maximum_sql_length)
 
         loss_sum += batch_loss
@@ -200,6 +205,8 @@ def train_epoch_with_interactions(interaction_batches,
         progbar.update(i)
 
     progbar.finish()
+
+    print('Skipped {} batches due to large schema column count.'.format(skipped_batch_count))
 
     total_loss = loss_sum / len(interaction_batches)
 
@@ -321,7 +328,13 @@ def evaluate_utterance_sample(sample,
     progbar.start()
 
     predictions = []
+    skipped_batch_count = 0
     for i, item in enumerate(sample):
+        if item.interaction.get_schema().num_col > 50:
+            skipped_batch_count += 1
+            progbar.update(i)
+            continue
+
         _, loss, predicted_seq = model.eval_step(
             item, max_generation_length, feed_gold_query=gold_forcing)
         loss = loss / len(item.gold_query())
@@ -362,6 +375,8 @@ def evaluate_utterance_sample(sample,
                     gold_table=item.gold_tables()[0])
 
         progbar.update(i)
+
+    print('Skipped {} batches due to large schema column count.'.format(skipped_batch_count))
 
     progbar.finish()
     predictions_file.close()
